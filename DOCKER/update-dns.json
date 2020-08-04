@@ -1,0 +1,18 @@
+{
+    "Comment": "Update record to reflect new IP address of task",
+    "Changes": [
+        {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+                "Name": "@@DOCKER_HOSTNAME@@.",
+                "Type": "A",
+                "TTL": 60,
+                "ResourceRecords": [
+                    {
+                        "Value": "@@IPADDRESS@@"
+                    }
+                ]
+            }
+        }
+    ]
+}
