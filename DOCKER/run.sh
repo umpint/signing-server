@@ -28,18 +28,36 @@ echo "getting secret"
 aws secretsmanager get-secret-value --secret-id  certificates/$DOCKER_HOSTNAME/privkey.pem | grep "BEGIN PRIVATE KEY" >/dev/null
 if [ $? == 0 ]; then
         #we have a values so get the data
+        mkdir -p /etc/letsencrypt/live/$DOCKER_HOSTNAME
+        mkdir -p /etc/letsencrypt/archive/$DOCKER_HOSTNAME
+        cd /etc/letsencrypt/live/$DOCKER_HOSTNAME
         for file in cert.pem chain.pem fullchain.pem privkey.pem
         do
-                mkdir -p /etc/letsencrypt/live/$DOCKER_HOSTNAME
+		file1=`echo $file | sed -e 's/.pem/1.pem/'`
                 aws secretsmanager get-secret-value --secret-id  certificates/$DOCKER_HOSTNAME/$file| jq ".SecretString" | sed -e s/\"//g | sed -e 's/\\n/\
-/g' > /etc/letsencrypt/live/$DOCKER_HOSTNAME/$file
+/g' > /etc/letsencrypt/archive/$DOCKER_HOSTNAME/$file1
                 echo "got $file"
+		ln -s ../../archive/$DOCKER_HOSTNAME/$file1 $file
         done
-        chmod 400 /etc/letsencrypt/live/$DOCKER_HOSTNAME/*
+        chmod 400 /etc/letsencrypt/archive/$DOCKER_HOSTNAME/*
         ls -l  /etc/letsencrypt/live/$DOCKER_HOSTNAME
+        ls -l  /etc/letsencrypt/archive/$DOCKER_HOSTNAME
         echo "keys copied"
+
+	echo "getting renewal"
+        mkdir -p /etc/letsencrypt/renewal
+        aws secretsmanager get-secret-value --secret-id  certificates/$DOCKER_HOSTNAME/renewal| jq ".SecretString" | sed -e s/\"//g | sed -e 's/\\n/\
+/g' > /etc/letsencrypt/renewal/${DOCKER_HOSTNAME}.conf
+        ls -lrt /etc/letsencrypt/renewal/${DOCKER_HOSTNAME}.conf
+        cat /etc/letsencrypt/renewal/${DOCKER_HOSTNAME}.conf
+        echo "renewal file created"
+
+
         cp /nginx.have_cert.conf /etc/nginx/sites-available/default
         echo "copied updated nginx config"
+	echo "certbot certifcates:"
+        certbot certificates
+
 fi
 
 echo "sedding /etc/nginx/sites-available/default with $DOCKER_HOSTNAME"
@@ -74,10 +92,12 @@ if [ ! -e /etc/letsencrypt/live/$DOCKER_HOSTNAME/privkey.pem ]; then
         echo "getting certificate"
         certbot --nginx $CERTBOT_TEST -n  -d $DOCKER_HOSTNAME --agree-tos --email $DOCKER_EMAIL
         ls -lrt /etc/letsencrypt/live/$DOCKER_HOSTNAME/
+        ls -lrt /etc/letsencrypt/archive/$DOCKER_HOSTNAME/
 else
         echo "renew certbot as have a key..."
         certbot renew
         ls -lrt /etc/letsencrypt/live/$DOCKER_HOSTNAME/
+        ls -lrt /etc/letsencrypt/archive/$DOCKER_HOSTNAME/
 fi
 
 
