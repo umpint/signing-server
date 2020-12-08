@@ -53,6 +53,23 @@ if [ $? == 0 ]; then
         echo "renewal file created"
 
 
+
+        echo "getting account data"
+        id=`cat /etc/letsencrypt/renewal/${DOCKER_HOSTNAME}.conf |grep account | awk '{print $3}'`
+        echo "id is $id"
+
+        mkdir -p /etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/$id
+
+        for file in meta.json private_key.json regr.json
+        do
+                filepath=/etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/$id/$file
+                aws secretsmanager get-secret-value --secret-id  certificates/$DOCKER_HOSTNAME/$file| jq ".SecretString" | sed -e s/\"//g | sed -e 's/\\n/\
+/g' > $filepath
+                ls -lrt $filepath
+                cat $filepath
+        done
+
+
         cp /nginx.have_cert.conf /etc/nginx/sites-available/default
         echo "copied updated nginx config"
 	echo "certbot certifcates:"
