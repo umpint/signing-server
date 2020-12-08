@@ -4,7 +4,7 @@ RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 RUN apt-get -q -y install curl zip unzip
 RUN curl -s https://get.sdkman.io | bash
 RUN chmod a+x "$HOME/.sdkman/bin/sdkman-init.sh"
-RUN source "$HOME/.sdkman/bin/sdkman-init.sh" && sdk install java 11.0.8.hs-adpt
+RUN source "$HOME/.sdkman/bin/sdkman-init.sh" && sdk install java 11.0.9.hs-adpt
 RUN source "$HOME/.sdkman/bin/sdkman-init.sh" && sdk install sbt 1.3.13
 RUN source "$HOME/.sdkman/bin/sdkman-init.sh" && sdk install scala 2.13.2
 
